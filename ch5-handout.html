@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>5장 미래학습을 위한 평가시스템 — 발제 핸드아웃</title>
+<style>
+  @page { size: A4; margin: 18mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: 'Noto Sans KR', 'Pretendard', 'Malgun Gothic', -apple-system, sans-serif;
+    font-size: 11pt;
+    line-height: 1.55;
+    color: #000;
+    background: #fff;
+  }
+  .head {
+    border: 2px solid #000;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+  }
+  .head .eyebrow {
+    font-size: 9pt;
+    letter-spacing: 2px;
+    color: #444;
+    margin-bottom: 4px;
+  }
+  .head h1 {
+    font-size: 17pt;
+    line-height: 1.3;
+    margin-bottom: 8px;
+    font-weight: 800;
+  }
+  .head .meta {
+    font-size: 9.5pt;
+    color: #333;
+    border-top: 1px solid #ccc;
+    padding-top: 7px;
+    margin-top: 7px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+  }
+  .head .meta b { font-weight: 700; color: #000; }
+  .head .presenter {
+    display: inline-block;
+    margin-top: 7px;
+    border: 1px solid #000;
+    padding: 2px 9px;
+    font-size: 9.5pt;
+    font-weight: 700;
+  }
+  .sec {
+    margin-bottom: 16px;
+    page-break-inside: avoid;
+  }
+  .sec-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 4px;
+    margin-bottom: 9px;
+  }
+  .sec-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    background: #000;
+    color: #fff;
+    font-size: 11pt;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .sec-title h2 {
+    font-size: 14pt;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  p { margin-bottom: 8px; text-align: justify; }
+  .lead {
+    border-left: 4px solid #000;
+    padding: 4px 0 4px 12px;
+    font-size: 11pt;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 10pt;
+    margin: 6px 0 4px;
+  }
+  th, td {
+    border: 1px solid #000;
+    padding: 6px 8px;
+    vertical-align: top;
+    text-align: left;
+  }
+  th {
+    background: #eee;
+    font-weight: 700;
+  }
+  td .k { font-weight: 700; }
+  ul { list-style: none; margin: 2px 0 6px; }
+  ul li {
+    position: relative;
+    padding-left: 16px;
+    margin-bottom: 6px;
+  }
+  ul li::before {
+    content: "\25A0";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 8pt;
+    line-height: 1.9;
+  }
+  ol.q { list-style: none; counter-reset: q; }
+  ol.q li {
+    counter-increment: q;
+    position: relative;
+    padding-left: 28px;
+    margin-bottom: 9px;
+    line-height: 1.5;
+  }
+  ol.q li::before {
+    content: "Q" counter(q);
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-weight: 800;
+    font-size: 10pt;
+    border: 1px solid #000;
+    padding: 0 4px;
+    line-height: 1.4;
+  }
+  .footnote {
+    border-top: 2px solid #000;
+    margin-top: 20px;
+    padding-top: 8px;
+    font-size: 8.5pt;
+    color: #333;
+    line-height: 1.5;
+  }
+  .footnote b { color: #000; }
+  .page-break { page-break-before: always; }
+  .note {
+    font-size: 9pt;
+    color: #444;
+    margin: 4px 0 8px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="eyebrow">책 모임 발제 핸드아웃</div>
+    <h1>무엇을 어떻게 평가할 것인가<br>— 5장 미래학습을 위한 평가시스템</h1>
+    <div class="meta">
+      <span><b>도서</b> 학교, 이렇게 바꾼다 (Leading Modern Learning)</span>
+      <span><b>저자</b> 제이 맥타이 · 그레그 커티스</span>
+      <span><b>역자</b> 강현석 · 조인숙</span>
+      <span><b>출판</b> 교육을바꾸는사람들 (2020)</span>
+      <span><b>발제 장</b> 5장 미래학습을 위한 평가시스템</span>
+    </div>
+    <span class="presenter">발제: 김진관 (대리)</span>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="sec-num">1</span><h2>한 문단 요지</h2></div>
+    <p class="lead">우리는 길러내겠다고 선언한 것을 측정하지 않고, 측정하기 쉬운 것만 측정한 뒤 그것을 성취라 부른다. 맥타이와 커티스는 학생의 학습을 시험 한 번의 점수라는 한 장의 스냅샷이 아니라, 여러 시점에 여러 렌즈로 찍은 사진을 모은 사진첩으로 보라고 요구한다. 협력·전이처럼 복합적인 성취는 누적된 증거로만 신뢰성 있게 드러나므로, 평가는 낱개 시험의 합이 아니라 비전이 정의한 장기 목표를 정점에 둔 하나의 시스템으로 설계되어야 한다. 평가는 학습이 끝난 뒤 결과를 재는 자가 아니라, 학교가 표방한 가치 있는 학습이 실제로 일어나는지를 증명하는 비전의 거울이다. 비전 문서가 아니라 평가표가 학교의 진심을 말한다.</p>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="sec-num">2</span><h2>핵심 개념</h2></div>
+    <table>
+      <thead>
+        <tr><th style="width:30%;">개념</th><th>한 줄 설명</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="k">스냅샷 대 사진첩</td><td>시험 한 번의 점수(스냅샷)가 아니라, 여러 시점·여러 방법으로 모은 누적 증거(사진첩)로 학습을 본다.</td></tr>
+        <tr><td class="k">평가 시스템</td><td>한 평가가 놓치는 증거를 다른 평가가 메우도록, 여러 방법을 의도적으로 배치한 구조.</td></tr>
+        <tr><td class="k">비전의 거울</td><td>평가는 결과를 재는 자가 아니라, 학교가 표방한 학습이 실제로 일어나는지 증명하는 도구.</td></tr>
+        <tr><td class="k">전이</td><td>익숙한 유형 반복이 아니라, 낯선 상황에 배운 것을 적용하는 능력. 진짜 이해의 증거.</td></tr>
+        <tr><td class="k">정렬과 균형</td><td>균형은 형성·총괄, 회상·전이를 안배하는 것. 정렬은 평가가 학교 비전·목표와 일치하는 것.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="sec-num">3</span><h2>저자들의 틀과 도구</h2></div>
+    <p class="note">이 장의 무게중심은 백워드 설계(UbD)의 2단계, 곧 수용 가능한 증거를 결정하는 단계에 있다. 가르치기 전에 무엇을 어떤 증거로 볼지부터 정한다는 순서가 핵심이며, 이 장은 그 2단계를 한 교실이 아니라 학교 차원으로 확장한다.</p>
+    <table>
+      <thead>
+        <tr><th style="width:24%;">도구</th><th style="width:40%;">무엇인가</th><th>무엇을 잡는가</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="k">수행과제 (GRASPS)</td><td>실제 맥락에서 지식·기능을 적용하게 하는 진정성 있는 과제</td><td>이해의 전이, 적용 능력</td></tr>
+        <tr><td class="k">루브릭</td><td>수행의 질을 판단하는 기준표 (분석적·총체적)</td><td>복합 수행을 일관·투명하게 채점</td></tr>
+        <tr><td class="k">포트폴리오</td><td>시간에 걸친 학생 작업의 모음</td><td>성장 과정, 누적된 역량 증거</td></tr>
+        <tr><td class="k">자기평가·성찰</td><td>학생이 자기 학습을 점검·평가하는 활동</td><td>메타인지, 자기조절학습</td></tr>
+        <tr><td class="k">전이의 평가</td><td>낯선 상황에 적용할 수 있는가를 보는 평가</td><td>진짜 이해 여부</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:10px;"><b>GRASPS</b> — 수행과제를 설계하는 틀. 단순 회상이 아니라 학생을 실제 역할에 놓아 지식의 적용을 끌어낸다.</p>
+    <table>
+      <thead>
+        <tr><th style="width:34%;">요소</th><th>설계 질문</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="k">Goal (목표)</td><td>학생이 풀어야 할 진짜 문제·도전은 무엇인가</td></tr>
+        <tr><td class="k">Role (역할)</td><td>학생이 맡는 역할은 무엇인가 (기자·설계자·정책 제안자 등)</td></tr>
+        <tr><td class="k">Audience (대상)</td><td>결과물을 받는 청중은 누구인가</td></tr>
+        <tr><td class="k">Situation (상황)</td><td>어떤 맥락·시나리오에 놓이는가</td></tr>
+        <tr><td class="k">Product / Performance</td><td>무엇을 만들거나 수행하는가</td></tr>
+        <tr><td class="k">Standards (성공기준)</td><td>무엇이 우수한 결과인가, 무엇으로 판단하는가</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:10px;"><b>루브릭</b> — 채점이 끝난 뒤 꺼내는 도구가 아니라 우수함의 기준을 미리 보여주는 학습 도구다. 과제 시작 전에 공유되고 우수 사례(앵커)와 함께 제시될 때, 학생이 자기 작업을 스스로 겨냥하게 된다. 같은 표라도 언제 보여주느냐에 따라 기능이 완전히 달라진다.</p>
+    <table>
+      <thead>
+        <tr><th style="width:18%;">유형</th><th style="width:26%;">정의</th><th>장점</th><th>단점</th><th>적합 상황</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="k">분석적</td><td>요소별로 나눠 채점</td><td>구체적 피드백, 성취기준별 도달 판단</td><td>채점 시간 길다</td><td>성취평가, 상세 피드백</td></tr>
+        <tr><td class="k">총체적</td><td>전체를 한 번에 채점</td><td>빠르고 전반적 인상 포착</td><td>어디를 고칠지 모호</td><td>대량 채점, 빠른 분류</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="page-break"></div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="sec-num">4</span><h2>우리 교실 적용 포인트</h2></div>
+    <p class="note">아래는 책의 직접 내용이 아니라 한국 교실 맥락으로 옮긴 해석과 가상의 예다. 책에 실린 학교 사례가 아니다.</p>
+    <ul>
+      <li>이 장의 지향은 2022 개정 교육과정의 과정중심평가와 거의 같은 방향을 가리킨다. 결과 점수라는 스냅샷에서 학습 과정의 누적 증거라는 사진첩으로의 이동이 두 텍스트의 공통 지향이다.</li>
+      <li>고교학점제 성취평가제에서 성취수준을 산출할 때, 요소별 도달 여부를 가르는 분석적 루브릭이 일관성과 신뢰도 확보에 직접 쓰인다.</li>
+      <li>중학교 1학년 과학에서 지식정보처리 역량을 GRASPS로 풀면, 우리 동네 하천 수질 변화를 분석하는 환경 모니터링 요원(Role)이 되어 구청 담당자(Audience)에게 낼 개선 제안서(Product)를 최근 3년 측정 자료라는 낯선 데이터(Situation)로 만들게 할 수 있다. 이때 회상이 아닌 전이가 증거로 남는다.</li>
+      <li>생성형 AI 시대에 이 장의 무게는 오히려 더 무거워진다. 단편 지식과 정형화된 과제의 답은 학생이 챗봇에게 물어 5초 만에 얻는다. 낯선 맥락에서의 적용과 학생 자신의 성찰만이 AI로 대체되기 어려운 증거로 남는다.</li>
+    </ul>
+
+    <p style="margin-top:8px;"><b>책의 개념과 한국 제도의 대응</b></p>
+    <table>
+      <thead>
+        <tr><th style="width:42%;">책의 개념</th><th>대응하는 한국 제도·정책</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="k">전이의 평가</td><td>서·논술형 확대, AI 시대 평가 재설계</td></tr>
+        <tr><td class="k">과정 증거의 누적</td><td>2022 개정 과정중심평가</td></tr>
+        <tr><td class="k">분석적 루브릭</td><td>고교학점제 성취평가제 성취수준 산출</td></tr>
+        <tr><td class="k">포트폴리오·자기평가</td><td>학교자율시간·자유학기제 산출물 평가</td></tr>
+        <tr><td class="k">진정성 수행과제</td><td>핵심역량 평가, IB(MYP·DP) 내부평가</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:10px;"><b>한 가지 비판적 시선</b> — 한국 학교가 번번이 실패하는 쪽은 균형이 아니라 정렬이다. 균형은 평가계획표에 칸을 만들면 어느 정도 채워진다. 문제는 정렬이다. 비전은 게시판에 걸려 있고 평가는 교과서 진도와 출제 관행을 따라 굴러가며, 둘은 서로를 한 번도 쳐다보지 않는다. 이 평가 시스템은 비전이 살아 있는 학교에서만 작동한다. 그러니 평가 개혁의 첫 질문은 어떤 루브릭을 쓸까가 아니라, 우리 학교는 정말 길러내려는 것이 있는가여야 한다.</p>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title"><span class="sec-num">5</span><h2>함께 생각할 질문</h2></div>
+    <ol class="q">
+      <li>한 학기 동안 한 학생에 대해 우리가 실제로 모으는 증거를 종류별로 적어 보면, 우리 평가는 스냅샷에 가까운가 사진첩에 가까운가, 그리고 어떤 편중이 드러나는가.</li>
+      <li>우리 학교가 비전에서 표방한 역량 중 현재 평가로는 증거가 거의 잡히지 않는 것은 무엇이며, 그 역량을 GRASPS 과제로 만든다면 Role·Audience·Situation을 어떻게 설정하겠는가.</li>
+      <li>우리 교과에서 단순 응용 문제와 진짜 전이 과제는 무엇이 다르며, 학생에게 배운 적 없는 새로운 상황을 어떻게 제시하겠는가.</li>
+      <li>루브릭을 학습 도구로 쓰려면 과제 전에 무엇을 학생과 공유해야 하며, 우수 사례를 미리 보여주는 것은 공정성과 학습에 각각 어떤 영향을 주는가.</li>
+      <li>생성형 AI로 정형 과제의 답을 쉽게 얻는 시대에, 어떤 종류의 증거가 여전히 학생 자신의 이해와 전이를 보여준다고 신뢰할 수 있는가.</li>
+    </ol>
+  </div>
+
+  <div class="footnote">
+    <b>출처</b><br>
+    원서: McTighe, J., &amp; Curtis, G. <i>Leading Modern Learning: A Blueprint for Vision-Driven Schools</i>. Solution Tree Press. (한국어판은 1판 기준)<br>
+    한국어판: 제이 맥타이 · 그레그 커티스 지음, 강현석 · 조인숙 옮김, 《학교, 이렇게 바꾼다》, 교육을바꾸는사람들, 2020.
+  </div>
+
+</body>
+</html>
