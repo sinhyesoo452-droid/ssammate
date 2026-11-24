@@ -1,0 +1,133 @@
+name: SsaemMate AI Website Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  website-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium webkit
+
+      - name: Test website
+        run: |
+          mkdir -p test-results
+
+          node <<'JS'
+          const { chromium, webkit } = require('playwright');
+          const fs = require('fs');
+
+          (async () => {
+            const results = [];
+            let failed = false;
+
+            for (const [name, engine] of [
+              ['chromium', chromium],
+              ['webkit', webkit]
+            ]) {
+              const browser = await engine.launch();
+
+              for (const [device, viewport] of [
+                ['desktop', {width: 1440, height: 900}],
+                ['mobile', {width: 390, height: 844}]
+              ]) {
+                const page = await browser.newPage({viewport});
+                const errors = [];
+                const label = `${name}-${device}`;
+
+                page.on('pageerror', e => {
+                  errors.push(e.message);
+                });
+
+                try {
+                  const response = await page.goto(
+                    'https://sinhyesoo452-droid.github.io/ssammate/',
+                    {waitUntil: 'load', timeout: 60000}
+                  );
+
+                  if (!response || !response.ok()) {
+                    errors.push('Website loading failed');
+                  }
+
+                  await page.waitForTimeout(2000);
+
+                  const brokenImages = await page.locator('img').evaluateAll(
+                    imgs => imgs.filter(
+                      i => !i.complete || i.naturalWidth === 0
+                    ).map(i => i.src)
+                  );
+
+                  errors.push(...brokenImages.map(
+                    src => 'Broken image: ' + src
+                  ));
+
+                  const buttons = await page.locator(
+                    'button, a, [role="button"]'
+                  ).evaluateAll(elements => elements.map(e => ({
+                    text: e.innerText || e.getAttribute('aria-label') || '',
+                    disabled: !!e.disabled
+                  })));
+
+                  results.push({
+                    browser: name,
+                    device,
+                    title: await page.title(),
+                    buttons,
+                    errors
+                  });
+
+                  if (errors.length) failed = true;
+
+                } catch (e) {
+                  failed = true;
+                  results.push({label, error: e.message});
+                } finally {
+                  await page.screenshot({
+                    path: `test-results/${label}.png`,
+                    fullPage: true
+                  }).catch(() => {});
+
+                  await page.close();
+                }
+              }
+
+              await browser.close();
+            }
+
+            fs.writeFileSync(
+              'test-results/report.json',
+              JSON.stringify(results, null, 2)
+            );
+
+            console.log(JSON.stringify(results, null, 2));
+            if (failed) process.exitCode = 1;
+          })().catch(e => {
+            console.error(e);
+            process.exitCode = 1;
+          });
+          JS
+
+      - name: Save test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-test-results
+          path: test-results/
+          retention-days: 14
