@@ -1,4 +1,4 @@
-name: SsaemMate AI Website Test
+name: SsaemMate AI Functional Test
 
 on:
   workflow_dispatch:
@@ -11,9 +11,9 @@ permissions:
   contents: read
 
 jobs:
-  website-test:
+  functional-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Setup Node.js
@@ -26,7 +26,7 @@ jobs:
           npm install playwright
           npx playwright install --with-deps chromium webkit
 
-      - name: Test website
+      - name: Functional test
         run: |
           mkdir -p test-results
 
@@ -34,81 +34,250 @@ jobs:
           const { chromium, webkit } = require('playwright');
           const fs = require('fs');
 
-          (async () => {
-            const results = [];
-            let failed = false;
+          const URL = 'https://sinhyesoo452-droid.github.io/ssammate/';
+          const results = [];
 
+          async function test(page, env, name, fn) {
+            const errors = [];
+            const listener = e => errors.push(e.message);
+            page.on('pageerror', listener);
+
+            try {
+              const before = await page.locator('body').innerText();
+              const detail = await fn(before);
+              if (errors.length) throw new Error(errors.join('; '));
+
+              results.push({
+                env, name,
+                status: detail === 'UNVERIFIED'
+                  ? 'UNVERIFIED' : 'PASS',
+                detail
+              });
+
+            } catch (e) {
+              results.push({
+                env, name,
+                status: 'FAIL',
+                error: e.message
+              });
+
+              await page.screenshot({
+                path: `test-results/${env}-${results.length}-error.png`,
+                fullPage: true
+              }).catch(() => {});
+
+            } finally {
+              page.off('pageerror', listener);
+            }
+          }
+
+          async function reset(page) {
+            const response = await page.goto(URL, {
+              waitUntil: 'load',
+              timeout: 60000
+            });
+            if (!response || !response.ok()) {
+              throw new Error('Website loading failed');
+            }
+          }
+
+          async function run(engine, browserName, device, viewport) {
+            const env = `${browserName}-${device}`;
+            const browser = await engine.launch();
+            const page = await browser.newPage({viewport});
+
+            try {
+              await test(page, env, 'Website loading', async () => {
+                await reset(page);
+                const broken = await page.locator('img').evaluateAll(
+                  imgs => imgs.filter(
+                    i => !i.complete || !i.naturalWidth
+                  ).map(i => i.src)
+                );
+                if (broken.length) {
+                  throw new Error(broken.join('; '));
+                }
+                return await page.title();
+              });
+
+              const navs = await page.locator('[data-nav]').evaluateAll(
+                els => [...new Set(els.map(e => e.dataset.nav))]
+              );
+
+              if (navs.length !== 6) {
+                results.push({
+                  env,
+                  name: 'Navigation count',
+                  status: 'FAIL',
+                  detail: `Found ${navs.length}, expected 6`
+                });
+              }
+
+              for (const nav of navs) {
+                await test(page, env, `Navigation: ${nav}`, async () => {
+                  await reset(page);
+
+                  const button = page.locator(
+                    `[data-nav="${nav}"]:visible`
+                  ).first();
+
+                  await button.waitFor({timeout: 5000});
+
+                  const before = await page.locator('body').innerText();
+                  const scrollBefore = await page.evaluate(() => scrollY);
+
+                  await button.click({timeout: 5000});
+                  await page.waitForTimeout(500);
+
+                  const after = await page.locator('body').innerText();
+                  const scrollAfter = await page.evaluate(() => scrollY);
+
+                  if (before === after && scrollBefore === scrollAfter) {
+                    return 'UNVERIFIED';
+                  }
+
+                  return 'Visible text or scroll position changed';
+                });
+              }
+
+              for (let i = 0; i < 8; i++) {
+                await test(page, env, `Feature ${i + 1}`, async () => {
+                  await reset(page);
+
+                  const button = page.locator(
+                    `[data-go="${i}"]:visible`
+                  ).first();
+
+                  await button.waitFor({timeout: 5000});
+                  const before = await page.locator('body').innerText();
+
+                  await button.click({timeout: 5000});
+                  await page.waitForTimeout(500);
+
+                  const after = await page.locator('body').innerText();
+
+                  if (before === after) {
+                    return 'UNVERIFIED';
+                  }
+
+                  return 'Feature screen changed';
+                });
+              }
+
+              await test(page, env, 'Exam review prompt', async () => {
+                await reset(page);
+
+                const review = page.locator(
+                  '#reviewGenerate'
+                );
+
+                if (!await review.isVisible()) {
+                  const candidates = page.locator('[data-go]:visible');
+                  const count = await candidates.count();
+
+                  for (let i = 0; i < count; i++) {
+                    await candidates.nth(i).click({timeout: 5000});
+                    if (await review.isVisible()) break;
+                  }
+                }
+
+                await review.waitFor({timeout: 5000});
+
+                await page.locator('#content').fill(
+                  'Choose the correct answer. I ___ a student. ① am ② is ③ are'
+                );
+
+                await page.locator('#reviewKey').fill('1번 ①');
+                await page.locator('#reviewContext').fill('중학교 영어');
+
+                await review.click({timeout: 5000});
+
+                const prompt = page.locator('#reviewPrompt');
+                await prompt.waitFor({
+                  state: 'visible',
+                  timeout: 5000
+                });
+
+                const value = await prompt.innerText();
+
+                if (!value.includes('I ___ a student')) {
+                  throw new Error('Exam content missing from prompt');
+                }
+
+                if (!await page.locator('#reviewCopy').isEnabled()) {
+                  throw new Error('Copy button disabled');
+                }
+
+                return 'Prompt generated and copy button enabled';
+              });
+
+              await reset(page);
+
+              await page.screenshot({
+                path: `test-results/${env}.png`,
+                fullPage: true
+              });
+
+              const inventory = await page.locator(
+                'button, input, textarea, select, [data-go], [data-nav]'
+              ).evaluateAll(els => els.map(e => ({
+                tag: e.tagName,
+                id: e.id,
+                text: e.innerText || '',
+                type: e.type || '',
+                go: e.dataset.go,
+                nav: e.dataset.nav
+              })));
+
+              fs.writeFileSync(
+                `test-results/${env}-inventory.json`,
+                JSON.stringify(inventory, null, 2)
+              );
+
+            } catch (e) {
+              results.push({
+                env,
+                name: 'Environment',
+                status: 'FAIL',
+                error: e.message
+              });
+
+            } finally {
+              await browser.close();
+            }
+          }
+
+          (async () => {
             for (const [name, engine] of [
               ['chromium', chromium],
               ['webkit', webkit]
             ]) {
-              const browser = await engine.launch();
-
               for (const [device, viewport] of [
                 ['desktop', {width: 1440, height: 900}],
                 ['mobile', {width: 390, height: 844}]
               ]) {
-                const page = await browser.newPage({viewport});
-                const errors = [];
-                const label = `${name}-${device}`;
-
-                page.on('pageerror', e => {
-                  errors.push(e.message);
-                });
-
-                try {
-                  const response = await page.goto(
-                    'https://sinhyesoo452-droid.github.io/ssammate/',
-                    {waitUntil: 'load', timeout: 60000}
-                  );
-
-                  if (!response || !response.ok()) {
-                    errors.push('Website loading failed');
-                  }
-
-                  await page.waitForTimeout(2000);
-
-                  const brokenImages = await page.locator('img').evaluateAll(
-                    imgs => imgs.filter(
-                      i => !i.complete || i.naturalWidth === 0
-                    ).map(i => i.src)
-                  );
-
-                  errors.push(...brokenImages.map(
-                    src => 'Broken image: ' + src
-                  ));
-
-                  const buttons = await page.locator(
-                    'button, a, [role="button"]'
-                  ).evaluateAll(elements => elements.map(e => ({
-                    text: e.innerText || e.getAttribute('aria-label') || '',
-                    disabled: !!e.disabled
-                  })));
-
-                  results.push({
-                    browser: name,
-                    device,
-                    title: await page.title(),
-                    buttons,
-                    errors
-                  });
-
-                  if (errors.length) failed = true;
-
-                } catch (e) {
-                  failed = true;
-                  results.push({label, error: e.message});
-                } finally {
-                  await page.screenshot({
-                    path: `test-results/${label}.png`,
-                    fullPage: true
-                  }).catch(() => {});
-
-                  await page.close();
-                }
+                await run(engine, name, device, viewport);
               }
+            }
 
-              await browser.close();
+            for (const name of [
+              'PDF text extraction',
+              'DOCX download',
+              'HWPX download',
+              'HTML download',
+              'TXT download',
+              'PDF export',
+              'Autosave and restore',
+              'Backup and deletion',
+              'Clipboard contents',
+              'External AI links',
+              'Exact SVG hit areas'
+            ]) {
+              results.push({
+                name,
+                status: 'UNVERIFIED',
+                detail: 'Requires dedicated functional assertions'
+              });
             }
 
             fs.writeFileSync(
@@ -117,7 +286,11 @@ jobs:
             );
 
             console.log(JSON.stringify(results, null, 2));
-            if (failed) process.exitCode = 1;
+
+            if (results.some(r => r.status === 'FAIL')) {
+              process.exitCode = 1;
+            }
+
           })().catch(e => {
             console.error(e);
             process.exitCode = 1;
@@ -128,6 +301,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: website-test-results
+          name: functional-test-results
           path: test-results/
           retention-days: 14
