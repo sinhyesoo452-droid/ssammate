@@ -1,3 +1,4 @@
+
 name: SsaemMate AI Functional Test
 
 on:
@@ -30,40 +31,79 @@ jobs:
         run: |
           mkdir -p test-results
 
-          node <<'JS'
+          cat > website-test.cjs <<'JS'
           const { chromium, webkit } = require('playwright');
           const fs = require('fs');
 
-          const URL = 'https://sinhyesoo452-droid.github.io/ssammate/';
+          const SITE_URL = 'https://sinhyesoo452-droid.github.io/ssammate/';
           const results = [];
+
+          function saveReport() {
+            fs.writeFileSync(
+              'test-results/report.json',
+              JSON.stringify(results, null, 2)
+            );
+          }
+
+          function record(result) {
+            results.push(result);
+            saveReport();
+            console.log(JSON.stringify(result));
+          }
+
+          process.on('exit', saveReport);
+          saveReport();
+
+          async function reset(page) {
+            const response = await page.goto(SITE_URL, {
+              waitUntil: 'domcontentloaded',
+              timeout: 45000
+            });
+
+            if (!response || !response.ok()) {
+              throw new Error('Website loading failed');
+            }
+
+            await page.locator('body').waitFor({
+              state: 'visible',
+              timeout: 10000
+            });
+          }
 
           async function test(page, env, name, fn) {
             const errors = [];
             const listener = e => errors.push(e.message);
+
             page.on('pageerror', listener);
 
             try {
-              const before = await page.locator('body').innerText();
-              const detail = await fn(before);
-              if (errors.length) throw new Error(errors.join('; '));
+              await reset(page);
+              const detail = await fn();
 
-              results.push({
-                env, name,
+              if (errors.length) {
+                throw new Error(errors.join('; '));
+              }
+
+              record({
+                env,
+                name,
                 status: detail === 'UNVERIFIED'
                   ? 'UNVERIFIED' : 'PASS',
                 detail
               });
 
             } catch (e) {
-              results.push({
-                env, name,
+              record({
+                env,
+                name,
                 status: 'FAIL',
                 error: e.message
               });
 
               await page.screenshot({
                 path: `test-results/${env}-${results.length}-error.png`,
-                fullPage: true
+                fullPage: true,
+                timeout: 5000
               }).catch(() => {});
 
             } finally {
@@ -71,63 +111,62 @@ jobs:
             }
           }
 
-          async function reset(page) {
-            const response = await page.goto(URL, {
-              waitUntil: 'load',
-              timeout: 60000
-            });
-            if (!response || !response.ok()) {
-              throw new Error('Website loading failed');
-            }
-          }
-
           async function run(engine, browserName, device, viewport) {
             const env = `${browserName}-${device}`;
-            const browser = await engine.launch();
-            const page = await browser.newPage({viewport});
+            let browser;
 
             try {
+              browser = await engine.launch();
+
+              const page = await browser.newPage({
+                viewport,
+                acceptDownloads: true
+              });
+
+              page.setDefaultTimeout(5000);
+
               await test(page, env, 'Website loading', async () => {
-                await reset(page);
+                await page.waitForLoadState('load', {
+                  timeout: 20000
+                });
+
                 const broken = await page.locator('img').evaluateAll(
                   imgs => imgs.filter(
                     i => !i.complete || !i.naturalWidth
                   ).map(i => i.src)
                 );
+
                 if (broken.length) {
                   throw new Error(broken.join('; '));
                 }
+
                 return await page.title();
               });
+
+              await reset(page);
 
               const navs = await page.locator('[data-nav]').evaluateAll(
                 els => [...new Set(els.map(e => e.dataset.nav))]
               );
 
-              if (navs.length !== 6) {
-                results.push({
-                  env,
-                  name: 'Navigation count',
-                  status: 'FAIL',
-                  detail: `Found ${navs.length}, expected 6`
-                });
-              }
+              record({
+                env,
+                name: 'Navigation count',
+                status: navs.length === 6 ? 'PASS' : 'FAIL',
+                detail: `Found ${navs.length} navigation items`
+              });
 
               for (const nav of navs) {
                 await test(page, env, `Navigation: ${nav}`, async () => {
-                  await reset(page);
-
                   const button = page.locator(
                     `[data-nav="${nav}"]:visible`
                   ).first();
 
-                  await button.waitFor({timeout: 5000});
-
                   const before = await page.locator('body').innerText();
                   const scrollBefore = await page.evaluate(() => scrollY);
 
-                  await button.click({timeout: 5000});
-                  await page.waitForTimeout(500);
+                  await button.click();
+                  await page.waitForTimeout(700);
 
                   const after = await page.locator('body').innerText();
                   const scrollAfter = await page.evaluate(() => scrollY);
@@ -136,22 +175,19 @@ jobs:
                     return 'UNVERIFIED';
                   }
 
-                  return 'Visible text or scroll position changed';
+                  return 'Navigation responded';
                 });
               }
 
               for (let i = 0; i < 8; i++) {
                 await test(page, env, `Feature ${i + 1}`, async () => {
-                  await reset(page);
-
                   const button = page.locator(
                     `[data-go="${i}"]:visible`
                   ).first();
 
-                  await button.waitFor({timeout: 5000});
                   const before = await page.locator('body').innerText();
 
-                  await button.click({timeout: 5000});
+                  await button.click();
                   await page.waitForTimeout(500);
 
                   const after = await page.locator('body').innerText();
@@ -165,23 +201,14 @@ jobs:
               }
 
               await test(page, env, 'Exam review prompt', async () => {
-                await reset(page);
-
-                const review = page.locator(
-                  '#reviewGenerate'
-                );
+                const review = page.locator('#reviewGenerate');
 
                 if (!await review.isVisible()) {
-                  const candidates = page.locator('[data-go]:visible');
-                  const count = await candidates.count();
-
-                  for (let i = 0; i < count; i++) {
-                    await candidates.nth(i).click({timeout: 5000});
-                    if (await review.isVisible()) break;
-                  }
+                  await page.locator('[data-go="1"]:visible')
+                    .first().click();
                 }
 
-                await review.waitFor({timeout: 5000});
+                await review.waitFor({state: 'visible'});
 
                 await page.locator('#content').fill(
                   'Choose the correct answer. I ___ a student. ① am ② is ③ are'
@@ -190,15 +217,15 @@ jobs:
                 await page.locator('#reviewKey').fill('1번 ①');
                 await page.locator('#reviewContext').fill('중학교 영어');
 
-                await review.click({timeout: 5000});
+                await review.click();
 
                 const prompt = page.locator('#reviewPrompt');
-                await prompt.waitFor({
-                  state: 'visible',
-                  timeout: 5000
-                });
 
-                const value = await prompt.innerText();
+                await prompt.waitFor({state: 'visible'});
+
+                const value = await prompt.evaluate(
+                  el => el.value || el.innerText || el.textContent || ''
+                );
 
                 if (!value.includes('I ___ a student')) {
                   throw new Error('Exam content missing from prompt');
@@ -208,14 +235,27 @@ jobs:
                   throw new Error('Copy button disabled');
                 }
 
-                return 'Prompt generated and copy button enabled';
+                return 'Exam review prompt generated';
+              });
+
+              await test(page, env, 'File upload interface', async () => {
+                const upload = page.locator('#upload');
+
+                if (!await upload.count()) {
+                  throw new Error('File input missing');
+                }
+
+                const accept = await upload.getAttribute('accept');
+
+                return `Accepted file types: ${accept || 'all'}`;
               });
 
               await reset(page);
 
               await page.screenshot({
                 path: `test-results/${env}.png`,
-                fullPage: true
+                fullPage: true,
+                timeout: 10000
               });
 
               const inventory = await page.locator(
@@ -235,7 +275,7 @@ jobs:
               );
 
             } catch (e) {
-              results.push({
+              record({
                 env,
                 name: 'Environment',
                 status: 'FAIL',
@@ -243,7 +283,10 @@ jobs:
               });
 
             } finally {
-              await browser.close();
+              if (browser) {
+                await browser.close().catch(() => {});
+              }
+              saveReport();
             }
           }
 
@@ -261,7 +304,14 @@ jobs:
             }
 
             for (const name of [
-              'PDF text extraction',
+              'Multi-page PDF extraction',
+              'PDF OCR',
+              'HWPX extraction',
+              'DOCX extraction',
+              'PPTX extraction',
+              'XLSX extraction',
+              'Image-based questions',
+              'Image insertion',
               'DOCX download',
               'HWPX download',
               'HTML download',
@@ -273,29 +323,45 @@ jobs:
               'External AI links',
               'Exact SVG hit areas'
             ]) {
-              results.push({
+              record({
                 name,
                 status: 'UNVERIFIED',
                 detail: 'Requires dedicated functional assertions'
               });
             }
 
+            saveReport();
+
+            const summary = {
+              PASS: results.filter(r => r.status === 'PASS').length,
+              FAIL: results.filter(r => r.status === 'FAIL').length,
+              UNVERIFIED: results.filter(
+                r => r.status === 'UNVERIFIED'
+              ).length
+            };
+
             fs.writeFileSync(
-              'test-results/report.json',
-              JSON.stringify(results, null, 2)
+              'test-results/summary.json',
+              JSON.stringify(summary, null, 2)
             );
 
-            console.log(JSON.stringify(results, null, 2));
+            console.log('TEST SUMMARY:', summary);
 
-            if (results.some(r => r.status === 'FAIL')) {
+            if (summary.FAIL > 0) {
               process.exitCode = 1;
             }
 
           })().catch(e => {
-            console.error(e);
+            record({
+              name: 'Fatal error',
+              status: 'FAIL',
+              error: e.message
+            });
             process.exitCode = 1;
           });
           JS
+
+          node website-test.cjs
 
       - name: Save test results
         if: always()
